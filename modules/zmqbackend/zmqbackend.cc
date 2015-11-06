@@ -19,6 +19,7 @@
 #include <arpa/inet.h>
 #include <boost/lexical_cast.hpp>
 #include "zmqbackend.hh"
+#include "zhelpers.hpp"
 
 static const char *kBackendId = "[ZMQBackend]";
 zmq::context_t *ZMQBackend::zmq_context = NULL;
@@ -156,7 +157,7 @@ void ZMQBackend::receive(string &line)
 		//
 		zmq::pollitem_t items[] =
 		{
-			{ *zmq_socket, 0, ZMQ_POLLIN, 0 }
+			{ zmq_socket, 0, ZMQ_POLLIN, 0 }
 		};
 		zmq::poll(&items[0], 1, (long)zmq_timeout);
 
@@ -233,7 +234,7 @@ void ZMQBackend::lookup( const QType& qtype, const DNSName& qname, DNSPacket* pk
 			uint64_t hwm = 1;
 			int linger_time = 1;
 	
-			zmq_socket->setsockopt(ZMQ_HWM, &hwm, sizeof(hwm));
+			zmq_socket->setsockopt(ZMQ_SNDHWM, &hwm, sizeof(hwm));
 			zmq_socket->setsockopt(ZMQ_LINGER, &linger_time, sizeof(linger_time));
 	
 			zmq_socket->connect(zmq_url.c_str());

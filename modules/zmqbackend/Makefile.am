@@ -8,7 +8,7 @@ EXTRA_DIST = \
 	backend.pl
 
 libzmqbackend_la_SOURCES = \
-	zhelpers.cpp zhelpers.h \
+	zhelpers.hpp \
 	zmqbackend.cc zmqbackend.hh \
 	zmq.hpp
 
