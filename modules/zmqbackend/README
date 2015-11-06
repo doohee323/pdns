@@ -1,0 +1,116 @@
+Author: David Hawthorne <dhawth@xdn.com>	2012
+
+LICENSE:
+	zmq, zhelpers.*, and zmq.hpp are under LGPL
+	powerdns is under GPL2
+
+DEPENDENCIES:
+
+This requires libzmq installed on the box, and the cppzmq binding
+installed in the local directory (it's just a header) from git:
+
+cppzmq from git, cloned with url: git://github.com/zeromq/cppzmq.git
+
+I'm using libzmq 2.2.1, so I had to git checkout 38bbe0816835c945d8bf6a90a48dbb7609ec4df0
+and use that zmq.hpp
+
+The example requires the php zmq binding installed.  There can be version
+problems here, but don't panic.  If you can't get the 2.2.1 zmq binding
+installed with your current version of php and if you have to use something
+newer, go ahead and do that.  You may need to also update the libzmq installed
+in your system, and if you have to do that you may need to get a newer version
+of the zmq.hpp file from the git repo mentioned above, and then recompile
+the zmqbackend.
+
+You can test to see if your php includes the zmq binding by running php -i | grep zmq
+
+COMPILING AS PART OF pdns:
+
+I used pdns 3.1.  I had to add modules/zmqbackend to pdns-3.1/configure.ac's
+AC_OUTPUT section.  Basically, search for pipebackend and clone that bit
+and s/pipe/zmq/.  Save and quit, autoreconf -i -f,  then run configure:
+
+./configure --with-dynmodules=zmq
+
+Here's what I did, since I don't have lua installed:
+
+./configure --without-lua --with-dynmodules=zmq --prefix=/home/dhawth/pdns_install/
+
+DEBUGGING:
+
+You'll want to add --with-verbose-logging to ./configure, and then enable
+query logging and start pdns with --loglevel=9.
+
+USING THE EXAMPLE backend.php:
+
+The example uses ipc:///tmp/dnspipe as the zmq url, so in your pdns.conf,
+put zmq-url=ipc:///tmp/dnspipe and you should be good to go.
+
+Unlike pipebackend, zmqbackend does not automatically start backend.php,
+you will have to start it manually.
+
+Using the pdns.conf in this directory, I ran dig like thus:
+
+dig @localhost -p 5300 foo.example.com. ANY
+
+CONFIGURATION NOTES:
+
+There are 3 configuration bits that need to be done in pdns.conf:
+
+zmq-url - the socket address, it can be tcp, ipc, etc, anything that zmq supports.
+
+zmq-timeout - the read timeout for calling recv on the socket.  Timeouts result in
+	a DBException being thrown, which will trigger a teardown and recreate of
+	the zmqbackend object, and thus a reconnection to your backend server.
+	timeout value is in milliseconds
+	Default value: 1 second
+
+zmq-version - the version number that you want to send to your backend after making
+	the initial connection, so you can tell your backend what format of query
+	you will send and what format of response you expect.  Feel free to develop
+	your own message content schema and rev this number as appropriate in the
+	codebase.  It's kind of a useless thing right now, but if you were to support
+	multiple kinds of content schemas and wanted to be able to switch between them,
+	this is how you would do it.
+	Default: 1
+
+ON THE MESSAGE PROTOCOL AND ZMQ:
+
+the plaintext method of passing messages back and forth was kept
+in lieu of switching to some other binary packed format because
+line splitting is easy, doesn't require external dependencies, is
+simple to debug, etc.
+
+Rules of using ZMQ REQ sockets:
+
+it's a REQuest/REPly pattern, which means:
+
+ALL writes to the socket must be followed by a read, no exceptions.
+No writes are allowed before a read for a prior write.
+No reads are allowed before a write has been done.
+
+It is highly recommended that you use the ZMQ_ROUTER type socket on your backend.
+
+ON THE IMPLEMENTATION:
+
+There are 4 state variables in the zmqbackend class:
+
+d_qname = the hostname of the outstanding (currently executing) query
+d_qtype = the query type (almost always SOA or ANY, I haven't seen any others yet)
+have_end = whether or not "END" was seen from the sender, indicating an END
+	to the records for this query.
+lineQueue = the lines received from the backend for a given query
+
+ON TESTING WITH DIG:
+
+dig doesn't include the ability to override the edns-subnet options/fields by default,
+but there is a patch included in this directory that will make it do so.  Downside:
+you have to find bind version 9.7.3 (google for bind ftp download and one of the US
+ftp servers will have it) and then apply this patch to dig.c (untar bind.tar.gz, 
+find . -name dig.c to find it).
+
+patch source: http://wilmer.gaa.st/edns-client-subnet/
+cd bind-9.7.3/bin/dig
+patch -p1 < bind-xxx-dig-edns-client-subnet.diff
+
+./dig @localhost -p 5300 foo.example.com. MX +client=172.16.0.1/24
