@@ -1,3 +1,5 @@
+AM_CPPFLAGS += $(CDB_CFLAGS)
+
 pkglib_LTLIBRARIES = libzmqbackend.la
 
 EXTRA_DIST = \
@@ -7,9 +9,10 @@ EXTRA_DIST = \
 
 libzmqbackend_la_SOURCES = \
 	zhelpers.cpp zhelpers.h \
-	zmqbackend.cc zmqbackend.hh
+	zmqbackend.cc zmqbackend.hh \
+	zmq.hpp
 
-libzmqbackend_la_LDFLAGS = -module -avoid-version
-
+libzmqbackend_la_LDFLAGS = -module -avoid-version -lzmq
+libzmqbackend_la_LIBADD = $(CDB_LIBS)
 
 
