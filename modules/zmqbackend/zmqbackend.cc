@@ -142,7 +142,7 @@ void ZMQBackend::lookup( const QType& qtype, const DNSName& qname, DNSPacket* dn
 {
 }
 
-bool ZMQBackend::getSOA( const DNSName& domain, SOAData& sd, DNSPacket* p )
+bool ZMQBackend::getSOA(const DNSName& name, SOAData& soadata, DNSPacket*)
 {
 	return true;
 }

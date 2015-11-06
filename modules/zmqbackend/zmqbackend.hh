@@ -33,7 +33,7 @@ class ZMQBackend : public DNSBackend
 		//
 		// special cased SOA handling, probably not implemented the way you want
 		//
-		bool getSOA(const string &name, SOAData &soadata, DNSPacket *p=0);
+		bool getSOA(const DNSName& name, SOAData& soadata, DNSPacket*);
 
 	private:
 		void connect();

@@ -369,6 +369,7 @@ AC_CONFIG_FILES([
   modules/randombackend/Makefile
   modules/remotebackend/Makefile
   modules/tinydnsbackend/Makefile
+  modules/zmqbackend/Makefile
   modules/lmdbbackend/Makefile
 ])
 AC_OUTPUT
