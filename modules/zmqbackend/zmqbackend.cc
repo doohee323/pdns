@@ -19,7 +19,6 @@
 #include <arpa/inet.h>
 #include <boost/lexical_cast.hpp>
 #include "zmqbackend.hh"
-#include "zhelpers.hpp"
 
 static const char *kBackendId = "[ZMQBackend]";
 zmq::context_t *ZMQBackend::zmq_context = NULL;
@@ -123,7 +122,7 @@ void ZMQBackend::send(const string &line)
 		// returns false on EAGAIN from socket, which shouldn't ever occur
 		// since we're not using nonblocking sockets...
 		//
-		if (!zmq::s_send(*zmq_socket, line))
+		if (!s_send(*zmq_socket, line))
 		{
 			throw ZException("send returned false and we're not using nonblocking sockets");
 		}
@@ -163,7 +162,7 @@ void ZMQBackend::receive(string &line)
 
 		if (items[0].revents & ZMQ_POLLIN)
 		{
-			line = zmq::s_recv(*zmq_socket);
+			line = s_recv(*zmq_socket);
 			return;
 		}
 	}

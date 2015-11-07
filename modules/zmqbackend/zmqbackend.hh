@@ -15,7 +15,9 @@
 
 #include "pdns/namespaces.hh"
 
-#include "zhelpers.h"
+#include <zmq.hpp>
+#include "zhelpers.hpp"
+//#include "zhelpers.h"
 #include "zexception.hh"
 
 class ZMQBackend : public DNSBackend
