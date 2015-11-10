@@ -64,11 +64,12 @@ ZMQBackend::ZMQBackend(const string &sfx)
 		}
 
 		do_query_logging = ::arg().mustDo("query-logging");
-
+		L << Logger::Error << " do_query_logging " << do_query_logging << endl;
 		do_wildcards = false;
 
 		if (getArgAsNum("do-wildcards") == 1)
 		{
+			L << Logger::Error << " do-wildcards " << getArgAsNum("do-wildcards") << endl;
 			do_wildcards = true;
 		}
 
@@ -122,6 +123,7 @@ void ZMQBackend::send(const string &line)
 		// returns false on EAGAIN from socket, which shouldn't ever occur
 		// since we're not using nonblocking sockets...
 		//
+		L << Logger::Error << " send: " << line << endl;
 		if (!s_send(*zmq_socket, line))
 		{
 			throw ZException("send returned false and we're not using nonblocking sockets");
@@ -154,11 +156,11 @@ void ZMQBackend::receive(string &line)
 		//
 		// receive line from zmq socket
 		//
-		zmq::pollitem_t items[] =
-		{
-			{ zmq_socket, 0, ZMQ_POLLIN, 0 }
+		zmq_pollitem_t items [] = {
+			{ zmq_socket,   0, ZMQ_POLLIN, 0 }
 		};
-		zmq::poll(&items[0], 1, (long)zmq_timeout);
+		L << Logger::Error << " zmq_timeout: " << zmq_timeout << endl;
+		zmq_poll(items, 1, zmq_timeout);
 
 		if (items[0].revents & ZMQ_POLLIN)
 		{
@@ -182,7 +184,7 @@ void ZMQBackend::receive(string &line)
 	// and set up new connections continuously, but not so high that
 	// you give poor performance.
 	//
-	throw ZException("socket timeout");
+	//throw ZException("socket timeout");
 }
 
 //
@@ -211,11 +213,15 @@ void ZMQBackend::lookup( const QType& qtype, const DNSName& qname, DNSPacket* pk
 	//
 	// there's no way to turn off wildcard support in pdns itself, so we have to intercept it here
 	//
-	if (!do_wildcards && qname.toString().compare("*"))
+	L << Logger::Error << " do_wildcards 2: " << do_wildcards << endl;
+	L << Logger::Error << " qname.toString(): " << qname.toString()[0] << endl;
+	if (!do_wildcards && qname.toString()[0] == '*')
 	{
+		L << Logger::Error << " return " << endl;
 		return;
 	}
 
+	L << Logger::Error << " go on " << endl;
 	//
 	// if ! connected, connect
 	//
@@ -230,12 +236,13 @@ void ZMQBackend::lookup( const QType& qtype, const DNSName& qname, DNSPacket* pk
 			//
 			zmq_socket  = new zmq::socket_t(*zmq_context, ZMQ_REQ);
 	
-			uint64_t hwm = 1;
+			//uint64_t hwm = 1;
 			int linger_time = 1;
 	
-			zmq_socket->setsockopt(ZMQ_SNDHWM, &hwm, sizeof(hwm));
+			//zmq_socket->setsockopt(ZMQ_SNDHWM, &hwm, sizeof(hwm));
 			zmq_socket->setsockopt(ZMQ_LINGER, &linger_time, sizeof(linger_time));
 	
+			L << Logger::Error << " zmq_url: " << zmq_url.c_str() << endl;
 			zmq_socket->connect(zmq_url.c_str());
 	
 			//
@@ -625,6 +632,9 @@ class ZMQLoader
 			//L << Logger::Notice << kBackendId << " This is the zmqbackend version "VERSION" ("__DATE__", "__TIME__") reporting" << endl;
 		}
 };
+
+bool ZMQBackend::setDomainMetadata(const DNSName& name, const std::string& kind, const std::vector<std::string>& meta)
+{ return false; }
 
 static ZMQLoader zmqbackend;
 

@@ -29,7 +29,6 @@ class ZMQBackend : public DNSBackend
 		void lookup(const QType&, const DNSName& qdomain, DNSPacket *p=0, int zoneId=-1);
 		bool get(DNSResourceRecord &r);
 		bool list(const DNSName& target, int domain_id, bool include_disabled=false);
-		string directBackendCmd(const string &query);
 		static DNSBackend *maker();
 
 		//
@@ -37,6 +36,7 @@ class ZMQBackend : public DNSBackend
 		//
 		bool getSOA(const DNSName& name, SOAData& soadata, DNSPacket*);
 
+		virtual bool setDomainMetadata(const DNSName& name, const string& kind, const std::vector<std::basic_string<char> >& meta);
 	private:
 		void connect();
 		void send(const string &line);

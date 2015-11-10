@@ -47,3 +47,4 @@ pdns.pid
 *.gcda
 *.gcno
 *.gcov
+/.settings/
