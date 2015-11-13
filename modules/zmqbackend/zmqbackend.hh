@@ -15,7 +15,6 @@
 
 #include "pdns/namespaces.hh"
 
-//#include <zmq.hpp>
 #include "zhelpers.hpp"
 #include "zexception.hh"
 
@@ -44,7 +43,6 @@ class ZMQBackend : public DNSBackend
 
 		string d_qname;
 		QType d_qtype;
-		//static zmq::context_t* zmq_context;
 		zmq::socket_t*  zmq_socket;
 		string zmq_url;
 		int zmq_timeout;

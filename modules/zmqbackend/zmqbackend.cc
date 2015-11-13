@@ -21,7 +21,25 @@
 #include "zmqbackend.hh"
 
 static const char *kBackendId = "[ZMQBackend]";
-//zmq::context_t *ZMQBackend::zmq_context = NULL;
+static zmq::context_t* zmq_context;
+
+//  Helper function that returns a new configured socket connected to the server
+static zmq::socket_t * s_client_socket (zmq::context_t & context, string zmq_url) {
+    //std::cout << "I: connecting to server..." << std::endl;
+    zmq::socket_t * client = new zmq::socket_t (context, ZMQ_REQ);
+
+    //  Configure socket to not wait at close time
+	int linger_time = 1;
+    client->setsockopt (ZMQ_LINGER, &linger_time, sizeof(linger_time));
+
+    int hwm = 1;
+	client->setsockopt(ZMQ_RCVHWM, &hwm, sizeof(hwm));
+	client->setsockopt(ZMQ_SNDHWM, &hwm, sizeof(hwm));
+	client->setsockopt(ZMQ_IDENTITY, "HELO\t", 5);
+    client->connect (zmq_url.c_str());
+
+    return client;
+}
 
 //
 // constructor:
@@ -74,10 +92,10 @@ ZMQBackend::ZMQBackend(const string &sfx)
 
 		zmq_socket = NULL;
 
-//		if (NULL == zmq_context)
-//		{
-//			zmq_context = new zmq::context_t(1);
-//		}
+		if (NULL == zmq_context)
+		{
+			zmq_context = new zmq::context_t(1);
+		}
 	}
 	catch (const ArgException &e)
 	{
@@ -159,13 +177,13 @@ void ZMQBackend::receive(string &line)
 			{ *zmq_socket, 0, ZMQ_POLLIN, 0 }
 		};
         int r = zmq::poll (&items[0], 1, (long)zmq_timeout);
-        L << Logger::Error << " error:::::::: " << r << endl;
-        L << Logger::Error << " items[0].revents:::::::: " << items[0].revents << endl;
+        //L << Logger::Error << " error:::::::: " << r << endl;
+        //L << Logger::Error << " items[0].revents:::::::: " << items[0].revents << endl;
 
 		if (items[0].revents & ZMQ_POLLIN)
 		{
         	line = s_recv (*zmq_socket);
-            L << Logger::Error << " reply2:::::::: " << line << endl;
+            //L << Logger::Error << " reply2:::::::: " << line << endl;
 			return;
 		}
         else {
@@ -188,25 +206,7 @@ void ZMQBackend::receive(string &line)
 	// and set up new connections continuously, but not so high that
 	// you give poor performance.
 	//
-	//throw ZException("socket timeout");
-}
-
-//  Helper function that returns a new configured socket connected to the server
-static zmq::socket_t * s_client_socket (zmq::context_t & context, string zmq_url) {
-	L << Logger::Error << " s_client_socket" << endl;
-    std::cout << "I: connecting to server..." << std::endl;
-    zmq::socket_t * client = new zmq::socket_t (context, ZMQ_REQ);
-
-    //  Configure socket to not wait at close time
-	int linger_time = 1;
-    client->setsockopt (ZMQ_LINGER, &linger_time, sizeof(linger_time));
-
-	// uint64_t hwm = 1;
-	// client->setsockopt(ZMQ_HWM, &hwm, sizeof(hwm));
-
-    client->connect (zmq_url.c_str());
-
-    return client;
+	throw ZException("socket timeout");
 }
 
 //
@@ -243,7 +243,6 @@ void ZMQBackend::lookup( const QType& qtype, const DNSName& qname, DNSPacket* pk
 	//
 	// if ! connected, connect
 	//
-	zmq::context_t context (1);
 	if (NULL == zmq_socket)
 	{
 		try
@@ -252,21 +251,21 @@ void ZMQBackend::lookup( const QType& qtype, const DNSName& qname, DNSPacket* pk
 			// this end of the zmq socket is a ZMQ_REQ socket, the other should be
 			// a ROUTER socket or a REP socket.
 			//
-			zmq_socket = s_client_socket (context, zmq_url);
+			zmq_socket = s_client_socket (*zmq_context, zmq_url);
 
 			//
 			// leaving zmq-version in to support versioning of backends
 			//
-			send("HELO\t" + getArg("version"));
-			string banner = "";
-			receive(banner);
+//			send("HELO\t" + getArg("version"));
+//			string banner = "";
+//			receive(banner);
+//
+//			if (banner != "OK")
+//			{
+//				throw ZException("version disagreement with backend, it does not like version " + getArg("version"));
+//			}
 	
-			if (banner != "OK")
-			{
-				throw ZException("version disagreement with backend, it does not like version " + getArg("version"));
-			}
-	
-			L << Logger::Info << "Backend " << suffix << " launched with banner: " << banner << endl;
+//			L << Logger::Info << "Backend " << suffix << " launched with banner: " << banner << endl;
 		}
 		catch (const ArgException &A)
 		{
@@ -354,38 +353,39 @@ void ZMQBackend::lookup( const QType& qtype, const DNSName& qname, DNSPacket* pk
 	{
 		string response;
 
-		L << Logger::Error << "send(query.str()) :" << query.str() << endl;
+		L << Logger::Info << "send(query.str()) :" << query.str() << endl;
 		send(query.str());
-//		receive(response);
-//
-//		//
-//		// receive throws an exception on any error or failure, including socket timeout.
-//		// if we got HERE, it means there was no problem receiving and we should have something
-//		// in $response.
-//		// for the case where the client (us) gets in a bad state because the server (backend)
-//		// was restarted, timing out, throwing an exception, and closing the socket to teh server
-//		// in the exception handling code is a good way to work around that, because zmq won't
-//		// get our socket back into the right state again by itself.
-//		//
-//
-//		DLOG(L << Logger::Debug << kBackendId << " backend returned response: " << response << endl);
-//
-//		if (response == "")
-//		{
-//			L << Logger::Error << kBackendId << " backend returned empty line in query for " << d_qname << endl;
-//			throw ZException("Format error communicating with backend");
-//		}
-//
-//		//
-//		// populate the lineQueue for get()
-//		//
-//		vector<string> lines;
-//		stringtok(lines, response, "\n");
-//
-//		BOOST_FOREACH(const string& line, lines)
-//		{
-//			lineQueue.push(line);
-//		}
+		receive(response);
+		L << Logger::Info << "response : " << response << endl;
+
+		//
+		// receive throws an exception on any error or failure, including socket timeout.
+		// if we got HERE, it means there was no problem receiving and we should have something
+		// in $response.
+		// for the case where the client (us) gets in a bad state because the server (backend)
+		// was restarted, timing out, throwing an exception, and closing the socket to teh server
+		// in the exception handling code is a good way to work around that, because zmq won't
+		// get our socket back into the right state again by itself.
+		//
+
+		DLOG(L << Logger::Debug << kBackendId << " backend returned response: " << response << endl);
+
+		if (response == "")
+		{
+			L << Logger::Error << kBackendId << " backend returned empty line in query for " << d_qname << endl;
+			throw ZException("Format error communicating with backend");
+		}
+
+		//
+		// populate the lineQueue for get()
+		//
+		vector<string> lines;
+		stringtok(lines, response, "\n");
+
+		BOOST_FOREACH(const string& line, lines)
+		{
+			lineQueue.push(line);
+		}
 	}
 	catch (ZException &e)
 	{
@@ -420,26 +420,8 @@ void ZMQBackend::lookup( const QType& qtype, const DNSName& qname, DNSPacket* pk
 		}
 		return;
 	}
-
-//	L << Logger::Error << "!!!333333!!!!!!!! " << endl;
-//
-//	    int retries_left = REQUEST_RETRIES;
-//	    while (retries_left) {
-//	        string request = "HELO\t" + getArg("version");
-//	        bool expect_reply = true;
-//	        while (expect_reply) {
-//	            zmq::pollitem_t items[] = { { *zmq_socket, 0, ZMQ_POLLIN, 0 } };
-//	            int r = zmq::poll (&items[0], 1, REQUEST_TIMEOUT);
-//	            L << Logger::Error << " error:::::::: " << r << endl;
-//	            L << Logger::Error << " items[0].revents:::::::: " << items[0].revents << endl;
-//	            if (items[0].revents & ZMQ_POLLIN) {
-//	                std::string reply = s_recv (*zmq_socket);
-//		            L << Logger::Error << " reply:::::::: " << reply << endl;
-//	            }
-//	        }
-//	    }
-//	    delete zmq_socket;
-//	return;
+	delete zmq_socket;
+	return;
 }
 
 bool ZMQBackend::getSOA(const DNSName& name, SOAData& soadata, DNSPacket*)
