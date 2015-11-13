@@ -385,7 +385,7 @@ void ZMQBackend::lookup( const QType& qtype, const DNSName& qname, DNSPacket* pk
 		L << Logger::Debug << "Query: '" << query.str() << "'" << endl;
 	}
 
-	L << Logger::Error << "!!!!!!!!!!! " << endl;
+	L << Logger::Error << "!! !!!! !!!!! " << endl;
 
 	d_qtype = qtype;
 	d_qname = qname.toString();

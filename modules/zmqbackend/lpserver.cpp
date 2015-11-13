@@ -13,7 +13,7 @@ int main ()
 
     zmq::context_t context(1);
     zmq::socket_t server(context, ZMQ_REP);
-    server.bind("ipc:///tmp/derp0");
+    server.bind("tcp://*:9999");
 
     int cycles = 0;
     while (1) {

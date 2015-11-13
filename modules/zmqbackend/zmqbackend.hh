@@ -6,6 +6,9 @@
 #ifndef ZMQBACKEND_HH
 #define ZMQBACKEND_HH
 
+#define REQUEST_TIMEOUT     250000    //  msecs, (> 1000!)
+#define REQUEST_RETRIES     3       //  Before we abandon
+
 #include <string>
 #include <queue>
 #include <map>
@@ -44,7 +47,7 @@ class ZMQBackend : public DNSBackend
 
 		string d_qname;
 		QType d_qtype;
-		static zmq::context_t* zmq_context;
+		//static zmq::context_t* zmq_context;
 		zmq::socket_t*  zmq_socket;
 		string zmq_url;
 		int zmq_timeout;

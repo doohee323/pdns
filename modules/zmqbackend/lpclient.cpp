@@ -8,7 +8,7 @@
 #include <sstream>
 
 #define REQUEST_TIMEOUT     2500    //  msecs, (> 1000!)
-#define REQUEST_RETRIES     3       //  Before we abandon
+#define REQUEST_RETRIES     100       //  Before we abandon
 
 //  Helper function that returns a new configured socket
 //  connected to the Hello World server
