@@ -6,9 +6,6 @@
 #ifndef ZMQBACKEND_HH
 #define ZMQBACKEND_HH
 
-#define REQUEST_TIMEOUT     250000    //  msecs, (> 1000!)
-#define REQUEST_RETRIES     3       //  Before we abandon
-
 #include <string>
 #include <queue>
 #include <map>
@@ -18,9 +15,8 @@
 
 #include "pdns/namespaces.hh"
 
-#include <zmq.hpp>
+//#include <zmq.hpp>
 #include "zhelpers.hpp"
-//#include "zhelpers.h"
 #include "zexception.hh"
 
 class ZMQBackend : public DNSBackend
@@ -31,6 +27,7 @@ class ZMQBackend : public DNSBackend
 
 		void lookup(const QType&, const DNSName& qdomain, DNSPacket *p=0, int zoneId=-1);
 		bool get(DNSResourceRecord &r);
+
 		bool list(const DNSName& target, int domain_id, bool include_disabled=false);
 		static DNSBackend *maker();
 
