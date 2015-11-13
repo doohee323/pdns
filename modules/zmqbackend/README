@@ -114,3 +114,16 @@ cd bind-9.7.3/bin/dig
 patch -p1 < bind-xxx-dig-edns-client-subnet.diff
 
 ./dig @localhost -p 5300 foo.example.com. MX +client=172.16.0.1/24
+
+=[fix with new pdns]==============================================================
+from 
+ - pdns-3.4.7 (https://github.com/PowerDNS/pdns.git a8e33c972404ae4b270cf8b2ba65fbe0d655e73c)
+ - libzmq (https://github.com/zeromq/libzmq.git c41fe88df63a6d331a7d86c06ba161c3e818f62f)
+ - jzmq (https://github.com/zeromq/jzmq.git 4b8bf753263699c4e0e03275d0f876eca4e9b5fe)
+ 
+1. change new libraries (cpp, java)
+2. remove ack event for following the new protocol of zmq (ZMQ_ROUTE-ZMQ_REQ)
+
+
+
+
