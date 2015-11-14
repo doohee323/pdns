@@ -8,6 +8,7 @@ EXTRA_DIST = \
 	backend.pl
 
 libzmqbackend_la_SOURCES = \
+	zmq.h \
 	zmq.hpp \
 	zhelpers.hpp \
 	zexception.hh \
